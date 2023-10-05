@@ -1,0 +1,18 @@
+universe = vanilla
+log = sim.job.log
+error = sim.job.err
+output = sim.job.out
+
+executable = prep.sh
+arguments = 8667213c9a6879fee2227d30ff31567b
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = Miniconda3-latest-Linux-x86_64.sh, prep.sh, project.py, init.py, project.yml, workspace
+transfer_output_files = workspace
+
+request_cpus = 1
+request_memory = 25GB
+request_disk = 25GB
+
+queue 1
