@@ -28,7 +28,7 @@ if __name__=="__main__":
 
 @MyProject.pre(ran)
 @MyProject.post(check_equilibrium)
-def continue_mc(job)
+def continue_mc(job):
     from init import resume
     with job:
         resume(job)
