@@ -12,13 +12,9 @@ def autocorrelation(data):
 
 equilibrium = False
 equilibrium_data = []
-# Check if a command-line argument was provided
-if len(sys.argv) < 2:
-    print("Please provide a file path as a command-line argument.")
-    sys.exit()
 
 # Generates data into readable arrays
-arr = np.genfromtxt(sys.argv[0])
+arr = np.genfromtxt(sys.argv[1])
 arr = np.delete(arr, 0, axis=0)
 energy = arr[:,0]
 timestep  = list(range(0, len(energy)*1000, 1000))
@@ -39,7 +35,7 @@ for segment in range(0, len(E_correlation), 100):
     if np.argmax(E_segment) == len(E_segment) // 2 and equilibrium == False:
         equilibrium = True
         equilibrium_data = arr[segment:len(energy),:]
-    elif np.argmax(E_segment != len(E_segment) // 2 and equilibrium == True:
+    elif np.argmax(E_segment) != len(E_segment) // 2 and equilibrium == True:
         equilibrium = False
         equilibrium_data = []
 if equilibrium_data != []:
