@@ -25,10 +25,10 @@ def simulate(job):
 
     snapshot = gsd.hoomd.Frame()
     snapshot.particles.N = N_particles
-    snapshot.particles.types = ["A", "B"]
+    snapshot.particles.types = ["A"]
     snapshot.particles.position = position[0:N_particles]
-    snapshot.particles.typeid = np.repeat([0, 1], N_particles // 2)
-    np.random.shuffle(snapshot.particles.typeid)
+    # snapshot.particles.typeid = np.repeat([0, 1], N_particles // 2)
+    # np.random.shuffle(snapshot.particles.typeid)
     snapshot.configuration.box = [L, L, L, 0, 0, 0]
 
     sim.create_state_from_snapshot(snapshot)
@@ -40,17 +40,14 @@ def simulate(job):
     nlist = md.nlist.Cell(buffer=0.5)
 
     # Define DLVO potential
-    dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=1.0)
+    dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=job.sp.rcut*job.sp.a1)
 
-    dlvo.params["A", "A"] = dict(
-        A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2
-    )
-    dlvo.params["A", "B"] = dict(
-        A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2
-    )
-    dlvo.params["B", "B"] = dict(
-        A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2
-    )
+    dlvo.params["A", "A"] = dict(A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2)
+
+    # Thermostat
+    sim.state.thermalize_particle_momenta(
+        filter=hoomd.filter.All(),
+        kT=1.5)
 
     # Integrate
     integrator = md.Integrator(dt=0.0005)
@@ -60,7 +57,7 @@ def simulate(job):
     integrator.methods.append(langevin)
     sim.operations.integrator = integrator
 
-    trigger = hoomd.trigger.Periodic(period=int(1e3))
+    trigger = hoomd.trigger.Periodic(period=int(1E4))
 
     # Log data
     logger = hoomd.logging.Logger(categories=["scalar", "string"])
@@ -71,30 +68,33 @@ def simulate(job):
     sim.operations.computes.append(thermo)
 
     # Add a log for the tracked variables
-    logger.add(thermo, quantities=["kinetic_energy", "pressure", "kinetic_temperature"])
+    logger.add(thermo, quantities=['potential_energy','pressure','kinetic_temperature'])
 
     # Log during sim (not running with CHTC)
     # sim.operations.writers.append(table)
 
     # Save results to table
     file = open("log.txt", mode="w", newline="\n")
-    table_file = hoomd.write.Table(output=file, trigger=trigger, logger=logger)
+    table_file = hoomd.write.Table(
+        output=file, trigger=trigger, logger=logger
+    )
     sim.operations.writers.append(table_file)
 
-    gsd_writer = hoomd.write.GSD(filename="trajectory.gsd", trigger=trigger)
+    gsd_writer = hoomd.write.GSD(filename='trajectory.gsd',
+            trigger=trigger)
 
     sim.operations.writers.append(gsd_writer)
 
     # Run simulation
     sim.run(job.sp.steps)
 
-
 def resume(job):
     device = hoomd.device.CPU()
     sim = hoomd.Simulation(device=device)
+    sim.seed = job.sp.seed
 
     # Takes the old starting point as the resuming point
-    with gsd.hoomd.open(filename="trajectory.gsd", mode="rb") as f:
+    with gsd.hoomd.open('trajectory.gsd',mode='r') as f:
         snapshot = f[-1]
     sim.create_state_from_snapshot(snapshot)
 
@@ -104,15 +104,12 @@ def resume(job):
     # Define DLVO potential
     dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=1.0)
 
-    dlvo.params["A", "A"] = dict(
-        A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2
-    )
-    dlvo.params["A", "B"] = dict(
-        A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2
-    )
-    dlvo.params["B", "B"] = dict(
-        A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2
-    )
+    dlvo.params["A", "A"] = dict(A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2)
+
+    # Thermostat
+    sim.state.thermalize_particle_momenta(
+        filter=hoomd.filter.All(),
+        kT=1.5)
 
     # Integrate
     integrator = md.Integrator(dt=0.0005)
@@ -122,7 +119,7 @@ def resume(job):
     integrator.methods.append(langevin)
     sim.operations.integrator = integrator
 
-    trigger = hoomd.trigger.Periodic(period=int(1e3))
+    trigger = hoomd.trigger.Periodic(period=int(1E4))
 
     # Log data
     logger = hoomd.logging.Logger(categories=["scalar", "string"])
@@ -133,14 +130,17 @@ def resume(job):
     sim.operations.computes.append(thermo)
 
     # Add a log for the tracked variables
-    logger.add(thermo, quantities=["kinetic_energy", "pressure", "kinetic_temperature"])
+    logger.add(thermo, quantities=['potential_energy','pressure','kinetic_temperature'])
 
     # Save results to table
     file = open("log.txt", mode="a", newline="\n")
-    table_file = hoomd.write.Table(output=file, trigger=trigger, logger=logger)
+    table_file = hoomd.write.Table(
+        output=file, trigger=trigger, logger=logger
+    )
     sim.operations.writers.append(table_file)
 
-    gsd_writer = hoomd.write.GSD(filename="trajectory.gsd", trigger=trigger, mode="ab")
+    gsd_writer = hoomd.write.GSD(filename='trajectory.gsd',
+            trigger=trigger, mode='ab')
 
     sim.operations.writers.append(gsd_writer)
 
