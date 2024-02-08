@@ -12,8 +12,8 @@ export PATH=$PWD/miniconda3/bin:$PATH
 # install packages
 rm -rf $PWD/miniconda3/envs/*
 source $PWD/miniconda3/etc/profile.d/conda.sh
-conda env create -f project.yml
-conda activate project
+conda env create -f DLVO.yml
+conda activate DVLO
 signac init
 
 # any new jobs that need to be created (these are just examples)
