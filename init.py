@@ -1,6 +1,6 @@
 import signac
 
-project = signac.init_project()
+project = signac.get_project()
 
 import itertools
 import math
@@ -9,6 +9,7 @@ import gsd.hoomd
 import hoomd
 import numpy as np
 from hoomd import hpmc, md
+from scipy.stats.qmc import Sobol
 
 
 def simulate(job):
@@ -19,9 +20,8 @@ def simulate(job):
     N_particles = job.sp.N_particles
     L = job.sp.L
 
-    K = math.ceil(N_particles ** (1 / 3))
-    x = np.linspace(-L / 2, L / 2, K, endpoint=False)
-    position = list(itertools.product(x, repeat=3))
+    s = Sobol(3)
+    position = np.array([job.sp.L * (s.random()-0.5).flatten() for _ in range(N_particles)])
 
     snapshot = gsd.hoomd.Frame()
     snapshot.particles.N = N_particles
@@ -40,14 +40,14 @@ def simulate(job):
     nlist = md.nlist.Cell(buffer=0.5)
 
     # Define DLVO potential
-    dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=job.sp.rcut*job.sp.a1)
+    dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=job.sp.L*0.45)
 
     dlvo.params["A", "A"] = dict(A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2)
 
     # Thermostat
     sim.state.thermalize_particle_momenta(
         filter=hoomd.filter.All(),
-        kT=1.5)
+        kT=1.0)
 
     # Integrate
     integrator = md.Integrator(dt=0.0005)
@@ -57,7 +57,7 @@ def simulate(job):
     integrator.methods.append(langevin)
     sim.operations.integrator = integrator
 
-    trigger = hoomd.trigger.Periodic(period=int(1E4))
+    trigger = hoomd.trigger.Periodic(period=int(100))
 
     # Log data
     logger = hoomd.logging.Logger(categories=["scalar", "string"])
@@ -102,14 +102,14 @@ def resume(job):
     nlist = md.nlist.Cell(buffer=0.5)
 
     # Define DLVO potential
-    dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=1.0)
+    dlvo = md.pair.DLVO(nlist=nlist, default_r_cut=job.sp.L*0.45)
 
     dlvo.params["A", "A"] = dict(A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2)
 
     # Thermostat
     sim.state.thermalize_particle_momenta(
         filter=hoomd.filter.All(),
-        kT=1.5)
+        kT=1.0)
 
     # Integrate
     integrator = md.Integrator(dt=0.0005)
@@ -119,7 +119,7 @@ def resume(job):
     integrator.methods.append(langevin)
     sim.operations.integrator = integrator
 
-    trigger = hoomd.trigger.Periodic(period=int(1E4))
+    trigger = hoomd.trigger.Periodic(period=int(100))
 
     # Log data
     logger = hoomd.logging.Logger(categories=["scalar", "string"])
