@@ -8,7 +8,7 @@ arguments = 8667213c9a6879fee2227d30ff31567b
 
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files = Miniconda3-latest-Linux-x86_64.sh, prep.sh, analyze.py, project.py, simulate.py, project.yml, workspace
+transfer_input_files = Miniconda3-latest-Linux-x86_64.sh, prep.sh, analyze.py, project.py, simulate.py, DLVO.yml, workspace
 transfer_output_files = workspace
 
 request_cpus = 1
