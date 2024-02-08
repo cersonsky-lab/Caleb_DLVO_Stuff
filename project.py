@@ -22,15 +22,15 @@ def check_equilibrium(job):
 @MyProject.post(ran)
 @MyProject.operation
 def run_mc(job):
-    from init import simulate
+    from simulate import sim
     with job:
-        simulate(job)
+        sim(job)
 
 @MyProject.pre(ran)
 @MyProject.post(check_equilibrium)
 @MyProject.operation
 def continue_mc(job):
-    from init import resume
+    from simulate import resume
     with job:
         resume(job)
 
