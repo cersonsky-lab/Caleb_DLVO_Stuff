@@ -12,7 +12,7 @@ from hoomd import hpmc, md
 from scipy.stats.qmc import Sobol
 
 
-def simulate(job):
+def sim(job):
     device = hoomd.device.CPU()
     sim = hoomd.Simulation(device=device)
     sim.seed = job.sp.seed
