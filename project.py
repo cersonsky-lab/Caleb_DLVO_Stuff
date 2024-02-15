@@ -22,9 +22,9 @@ def check_equilibrium(job):
 @MyProject.post(ran)
 @MyProject.operation
 def run_mc(job):
-    from simulate import sim
+    from simulate import init
     with job:
-        sim(job)
+        init(job)
 
 @MyProject.pre(ran)
 @MyProject.post(check_equilibrium)
