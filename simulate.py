@@ -12,7 +12,7 @@ from hoomd import hpmc, md
 from scipy.stats.qmc import Sobol
 
 
-def sim(job):
+def init(job):
     device = hoomd.device.CPU()
     sim = hoomd.Simulation(device=device)
     sim.seed = job.sp.seed
@@ -27,6 +27,7 @@ def sim(job):
     snapshot.particles.N = N_particles
     snapshot.particles.types = ["A"]
     snapshot.particles.position = position[0:N_particles]
+    snapshot.particles.mass = np.full(N_particles, (4/3)*np.pi)
     # snapshot.particles.typeid = np.repeat([0, 1], N_particles // 2)
     # np.random.shuffle(snapshot.particles.typeid)
     snapshot.configuration.box = [L, L, L, 0, 0, 0]
@@ -47,17 +48,17 @@ def sim(job):
     # Thermostat
     sim.state.thermalize_particle_momenta(
         filter=hoomd.filter.All(),
-        kT=1.0)
+        kT=job.sp.kT)
 
     # Integrate
     integrator = md.Integrator(dt=0.0005)
     integrator.forces.append(dlvo)
 
-    langevin = md.methods.Langevin(kT=1.0, filter=hoomd.filter.All())
+    langevin = md.methods.Langevin(kT=job.sp.kT, filter=hoomd.filter.All())
     integrator.methods.append(langevin)
     sim.operations.integrator = integrator
 
-    trigger = hoomd.trigger.Periodic(period=int(100))
+    trigger = hoomd.trigger.Periodic(period=int(1000))
 
     # Log data
     logger = hoomd.logging.Logger(categories=["scalar", "string"])
@@ -68,7 +69,7 @@ def sim(job):
     sim.operations.computes.append(thermo)
 
     # Add a log for the tracked variables
-    logger.add(thermo, quantities=['potential_energy','pressure','kinetic_temperature'])
+    logger.add(thermo, quantities=['potential_energy','kinetic_energy','pressure','kinetic_temperature'])
 
     # Log during sim (not running with CHTC)
     # sim.operations.writers.append(table)
@@ -106,20 +107,15 @@ def resume(job):
 
     dlvo.params["A", "A"] = dict(A=job.sp.A, kappa=job.sp.kappa, Z=job.sp.Z, a1=job.sp.a1, a2=job.sp.a2)
 
-    # Thermostat
-    sim.state.thermalize_particle_momenta(
-        filter=hoomd.filter.All(),
-        kT=1.0)
-
     # Integrate
     integrator = md.Integrator(dt=0.0005)
     integrator.forces.append(dlvo)
 
-    langevin = md.methods.Langevin(kT=1.0, filter=hoomd.filter.All())
+    langevin = md.methods.Langevin(kT=job.sp.kT, filter=hoomd.filter.All())
     integrator.methods.append(langevin)
     sim.operations.integrator = integrator
 
-    trigger = hoomd.trigger.Periodic(period=int(100))
+    trigger = hoomd.trigger.Periodic(period=int(1000))
 
     # Log data
     logger = hoomd.logging.Logger(categories=["scalar", "string"])
@@ -128,9 +124,6 @@ def resume(job):
     # Create a ThermodynamicQuantities object for the simulation
     thermo = hoomd.md.compute.ThermodynamicQuantities(filter=hoomd.filter.All())
     sim.operations.computes.append(thermo)
-
-    # Add a log for the tracked variables
-    logger.add(thermo, quantities=['potential_energy','pressure','kinetic_temperature'])
 
     # Save results to table
     file = open("log.txt", mode="a", newline="\n")

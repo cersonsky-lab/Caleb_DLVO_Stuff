@@ -6,6 +6,15 @@ import subprocess
 class MyProject(FlowProject):
     pass
 
+@MyProject.post.isfile('potential.png')
+@MyProject.operation
+def output_potential(job):
+    from analyze import DLVO
+    from matplotlib import pyplot as plt
+    rs = np.linspace(0, 10, 100)
+    plt.plot(rs, DLVO(job, rs))
+    plt.savefig(job.fn('potential.png'))
+
 @MyProject.label
 def ran(job):
     return os.path.isfile(job.fn('log.txt'))
@@ -13,8 +22,10 @@ def ran(job):
 @MyProject.label
 def check_equilibrium(job):
     equilibrium = False
-    job_log = job.fn('log.txt')
-    subprocess.call(["python", "analyze.py", job_log, job.id])
+
+    from analyze import run_analysis
+    run_analysis(job, job.fn('log.txt'))
+
     if os.path.isfile(job.fn('equilibrium_data.txt')):
         equilibrium = True
     return equilibrium
