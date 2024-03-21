@@ -2,15 +2,19 @@ from flow import FlowProject
 import numpy as np
 import os
 import subprocess
-
-
+import shutil
 
 class MyProject(FlowProject):
     pass
 
-# @MyProject.label
-# def minimized(job):
-#     return os.path.isfile(job.fn('minimized_coordinate.data'))
+@MyProject.post.isfile('potential.png')
+@MyProject.operation
+def output_potential(job):
+    from analyze import DLVO
+    from matplotlib import pyplot as plt
+    rs = np.linspace(0, 10, 100)
+    plt.plot(rs, DLVO(job, rs))
+    plt.savefig(job.fn('potential.png'))
 
 @MyProject.label
 def ran(job):
@@ -19,33 +23,48 @@ def ran(job):
 @MyProject.label
 def check_equilibrium(job):
     equilibrium = False
-    job_log = job.fn('log.txt')
-    subprocess.call(["python", "analyze.py", job_log, job.id])
+
+    from analyze import run_analysis
+    run_analysis(job, job.fn('run.data'))
+
     if os.path.isfile(job.fn('equilibrium_data.txt')):
         equilibrium = True
     return equilibrium
 
-@MyProject.post(minimized)
-@MyProject.operation
-def min(job):
-    from init import minimize
-    with job:
-        minimize(job)
-
 @MyProject.post(ran)
 @MyProject.operation
 def run_mc(job):
-    from init import simulate
+    from lammps import lammps
     with job:
-        simulate(job)
+        # Copy the original LAMMPS input file to the job's directory
+        shutil.copy("input.run.lammps", job.fn("input.run.lammps"))
 
-@MyProject.pre(ran)
-@MyProject.post(check_equilibrium)
-@MyProject.operation
-def continue_mc(job):
-    from init import resume
-    with job:
-        resume(job)
+        # Write parameters to the LAMMPS input script
+        with open(job.fun("input.run.lammps"), "a") as f:
+            f.write(f"variable L equal {job.sp.L}\n")
+            f.write(f"variable N equal {job.sp.N}\n")
+            f.write(f"variable radius equal {job.sp.r}\n")
+            f.write(f"variable M1 equal {job.sp.M}\n")
+            f.write(f"variable epsilon_vdw equal {job.sp.epsilon}\n")
+            f.write(f"variable kappa equal {job.sp.kappa}\n")
+            f.write(f"variable Acc equal {job.sp.A}\n")
+            f.write(f"variable d1 equal {2*job.sp.r}\n")
+            f.write(f"variable T equal {job.sp.T}\n")
+            f.write(f"variable seed equal {job.sp.seed}\n")
+            f.write(f"variable steps equal {job.sp.steps}\n")
+
+        # Run the LAMMPS script
+        lmp = lammps()
+        lmp.file(job.fn("input.run.lammps"))
+
+# Ignoring for now
+# @MyProject.pre(ran)
+# @MyProject.post(check_equilibrium)
+# @MyProject.operation
+# def continue_mc(job):
+#     from input.run import resume
+#     with job:
+#         resume(job)
 
 if __name__=="__main__":
     MyProject().main()

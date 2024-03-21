@@ -10,8 +10,9 @@ def autocorrelation(data):
 	autocorr = autocorr[len(autocorr)//2:]
 	return autocorr
 
+# THIS IS CURRENTLY INCORRECT
 def DLVO(job, r):
-	return -1*(job.sp.A/6)*((2*job.sp.a1*job.sp.a2)/(r**2-(job.sp.a1+job.sp.a2)**2)+(2*job.sp.a1*job.sp.a2)/(r**2-(job.sp.a1-job.sp.a2)**2)+np.log((r**2-(job.sp.a1+job.sp.a2)**2)/(r**2-(job.sp.a1-job.sp.a2)**2)))+((job.sp.a1*job.sp.a2)/(job.sp.a1+job.sp.a2))*job.sp.Z*np.exp(-1*job.sp.kappa*(r-(job.sp.a1+job.sp.a2)))
+	return -1*(job.sp.A/6)*((2*job.sp.r*job.sp.r)/(r**2-(job.sp.r+job.sp.r)**2)+(2*job.sp.r*job.sp.r)/(r**2-(job.sp.r-job.sp.r)**2)+np.log((r**2-(job.sp.r+job.sp.r)**2)/(r**2-(job.sp.r-job.sp.r)**2)))
 
 def run_analysis(job, log):
 	equilibrium = False
