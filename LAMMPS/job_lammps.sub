@@ -1,0 +1,25 @@
+#lammps.sub
+
+universe = vanilla
+
+executable = lammps_job.sh
+
+log = lammps_$(Cluster).log
+output = lammps_$(Cluster)_$(Process).out
+error = lammps_$(Cluster)_$(Process).err
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = file1,/absolute/pathto/file2,etc
+
+request_cpus = 1
+request_memory = 25GB
+request_disk = 25GB
+
+queue 1
+
+# Wherever you see $(Cluster), HTCondor will insert the
+# queue number assigned to this set of jobs at the time of submission.
+#  $(Process) will be a integer number for each job, starting with "0"
+# and increasing for the relevant number of jobs.
+# arguments = $(Process)

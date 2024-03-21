@@ -1,0 +1,15 @@
+name: lammps
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - lammps
+  - openmpi
+  - pip
+  - pip:
+    - ase
+    - signac==2.0.0
+    - signac-flow==0.25.0
+    - numpy
+    - scipy
+    - tqdm
