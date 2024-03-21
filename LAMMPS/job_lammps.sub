@@ -2,15 +2,16 @@
 
 universe = vanilla
 
-executable = lammps_job.sh
+executable = job_lammps.sh
 
-log = lammps_$(Cluster).log
-output = lammps_$(Cluster)_$(Process).out
-error = lammps_$(Cluster)_$(Process).err
+log = logs/lammps_$(Cluster).log
+output = logs/lammps_$(Cluster)_$(Process).out
+error = logs/lammps_$(Cluster)_$(Process).err
 
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files = file1,/absolute/pathto/file2,etc
+transfer_input_files = Miniforge3-Linux-x86_64.sh, job_lammps.sh, analyze.py, project.py, input.run.lammps, input.run.lammps, lammps.yml, workspace 
+transfer_output_files = workspace
 
 request_cpus = 1
 request_memory = 25GB

@@ -14,17 +14,17 @@ newton          off
 # System parameters
 variable        L equal job.sp.L            # Box size/2
 variable        N equal job.sp.N             # Number of particles
-variable        radius equal job.sp.a        # Particle radius
-variable        M1 equal 1.0            # Particle 1 mass
-variable        epsilon_vdw equal 1.0   # Van der Waals energy parameter
-variable        kappa equal 10.0        # Inverse Debye screening length
-variable        Acc equal 39.478        # Hamaker constant between two colloid particles
+variable        radius equal job.sp.r        # Particle radius
+variable        M1 equal job.sp.M            # Particle 1 mass
+variable        epsilon_vdw equal job.sp.epsilon   # Van der Waals energy parameter
+variable        kappa equal job.sp.kappa        # Inverse Debye screening length
+variable        Acc equal job.sp.A        # Hamaker constant between two colloid particles
 variable        Ae equal 0.0            # Preexponent constant of yukawa potential
 variable        sigma_cc equal 0.1      # Size of the small particles integrated (Need to be adjusted)
-variable        d1 equal 2.0            # Particle 1 diameter
+variable        d1 equal (2*job.sp.r)            # Particle 1 diameter
 variable        cut_colloid equal 25.0  # cutoff radius of colloidal LJ-like interaction
 variable        cut_elec equal 2.50     # cutoff radius of yukawa potential
-variable        T equal 1.00            # temperature
+variable        T equal job.sp.T            # temperature
 
 
 # System definition
@@ -61,8 +61,8 @@ fix myat all ave/time 100 1 100 c_myrdf[*] file tmp.rdf mode vector
 
 
 # Run
-velocity all create ${T} 4928459 mom yes rot yes dist gaussian
+velocity all create ${T} job.sp.v-seed mom yes rot yes dist gaussian
 fix             mynvt all nvt temp ${T} ${T} 10.0
 timestep        0.005
-run             300000
+run             job.sp.steps
 write_data      run.data
