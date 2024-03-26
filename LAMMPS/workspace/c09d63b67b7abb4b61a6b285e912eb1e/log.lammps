@@ -1,0 +1,167 @@
+LAMMPS (21 Nov 2023)
+  using 1 OpenMP thread(s) per MPI task
+variable L equal 20
+variable N equal 1528
+variable radius equal 1.0
+variable M1 equal 1.0
+variable epsilon_vdw equal 1.0
+variable kappa equal 0.0
+variable Acc equal 39.478
+variable d1 equal 2.0
+variable T equal 1.0
+variable seed equal 4938409
+variable steps equal 10000
+# LAMMPS Run simulation Simple colloid with DLVO potential
+# Just Lennard-Jones potential for now
+# 500 particles, box length 40
+# T=1.0, damping constant = 10.0
+# In need of adjust parameters such as sigma_cc
+
+# Initialization
+units           lj
+dimension       3
+boundary        p p p
+atom_style      sphere
+newton          off
+
+# System parameters not changed by Signac
+variable        Ae equal 0.0            # Preexponent constant of yukawa potential
+variable        sigma_cc equal 0.1      # Size of the small particles integrated (Need to be adjusted)
+variable        cut_colloid equal 25.0  # cutoff radius of colloidal LJ-like interaction
+variable        cut_elec equal 2.50     # cutoff radius of yukawa potential
+
+
+# System definition
+region          simulation_box block -${L} ${L} -${L} ${L} -${L} ${L}
+region          simulation_box block -20 ${L} -${L} ${L} -${L} ${L}
+region          simulation_box block -20 20 -${L} ${L} -${L} ${L}
+region          simulation_box block -20 20 -20 ${L} -${L} ${L}
+region          simulation_box block -20 20 -20 20 -${L} ${L}
+region          simulation_box block -20 20 -20 20 -20 ${L}
+region          simulation_box block -20 20 -20 20 -20 20
+create_box      1 simulation_box
+Created orthogonal box = (-20 -20 -20) to (20 20 20)
+  1 by 1 by 1 MPI processor grid
+create_atoms    1 random ${N} 12345 simulation_box overlap 2.2
+create_atoms    1 random 1528 12345 simulation_box overlap 2.2
+Created 1528 atoms
+  using lattice units in orthogonal box = (-20 -20 -20) to (20 20 20)
+  create_atoms CPU = 0.039 seconds
+
+# Particle properties
+set             group all diameter ${d1}
+set             group all diameter 2
+Setting atom values ...
+  1528 settings made for diameter
+set             group all density 10.0
+Setting atom values ...
+  1528 settings made for density
+
+# Pair potentials
+pair_style      hybrid/overlay colloid ${cut_colloid} yukawa/colloid ${kappa} ${cut_elec}
+pair_style      hybrid/overlay colloid 25 yukawa/colloid ${kappa} ${cut_elec}
+pair_style      hybrid/overlay colloid 25 yukawa/colloid 0 ${cut_elec}
+pair_style      hybrid/overlay colloid 25 yukawa/colloid 0 2.5
+pair_coeff      1 1 colloid ${Acc} ${sigma_cc} ${d1} ${d1}
+pair_coeff      1 1 colloid 39.478 ${sigma_cc} ${d1} ${d1}
+pair_coeff      1 1 colloid 39.478 0.1 ${d1} ${d1}
+pair_coeff      1 1 colloid 39.478 0.1 2 ${d1}
+pair_coeff      1 1 colloid 39.478 0.1 2 2
+pair_coeff      1 1 yukawa/colloid ${Ae}
+pair_coeff      1 1 yukawa/colloid 0
+# pair_style      colloid ${cut_colloid}
+# pair_coeff      1 1 ${Acc} ${sigma_cc} 1.0 1.0
+
+# Settings
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check no
+
+# Visualization
+thermo          100
+thermo_style    custom step temp press pe ke etotal
+dump            mydmp all atom 100 dump.min.lammpstrj
+
+# Radial distribution function
+# computed every 100 steps, evaluated every 100 steps,
+# averaged for once, avg calculated every 100 steps
+compute myrdf all rdf 100 * *
+fix myat all ave/time 100 1 100 c_myrdf[*] file tmp.rdf mode vector
+
+
+
+# Run
+velocity all create ${T} ${seed} mom yes rot yes dist gaussian
+velocity all create 1 ${seed} mom yes rot yes dist gaussian
+velocity all create 1 4938409 mom yes rot yes dist gaussian
+fix             mynvt all nvt temp ${T} ${T} 10.0
+fix             mynvt all nvt temp 1 ${T} 10.0
+fix             mynvt all nvt temp 1 1 10.0
+timestep        0.005
+run             ${steps}
+run             10000
+Generated 0 of 0 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = no
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 25.3
+  ghost atom cutoff = 25.3
+  binsize = 12.65, bins = 4 4 4
+  3 neighbor lists, perpetual/occasional/extra = 2 1 0
+  (1) pair colloid, perpetual
+      attributes: half, newton off
+      pair build: half/bin/newtoff
+      stencil: full/bin/3d
+      bin: standard
+  (2) pair yukawa/colloid, perpetual, trim from (1)
+      attributes: half, newton off, cut 2.8
+      pair build: trim
+      stencil: none
+      bin: none
+  (3) compute rdf, occasional, copy from (1)
+      attributes: half, newton off
+      pair build: copy
+      stencil: none
+      bin: none
+Per MPI rank memory allocation (min/avg/max) = 23.4 | 23.4 | 23.4 Mbytes
+   Step          Temp          Press          PotEng         KinEng         TotEng    
+         0   1             -0.12316931    -nan            1.4990183     -nan          
+       100   1.7689004      0.014937479   -nan            2.6516141     -nan          
+       200   2.0691506     -0.0087955856  -nan            3.1016947     -nan          
+       300   2.3201855     -0.06053994    -nan            3.4780006     -nan          
+       400   2.5036452     -0.097656742   -nan            3.7530101     -nan          
+       500   2.5857206      0.085629579   -nan            3.8760425     -nan          
+       600   2.6363949     -0.074085656   -nan            3.9520042     -nan          
+       700   3.0324146      0.092814314   -nan            4.5456451     -nan          
+       800   3.1463058      0.08076615    -nan            4.71637       -nan          
+       900   3.38964       -0.093386252   -nan            5.0811325     -nan          
+      1000   3.7598637     -0.20747409    -nan            5.6361047     -nan          
+      1100   3.8711074      0.37666601    -nan            5.8028609     -nan          
+      1200   4.0283598      0.51522033    -nan            6.0385852     -nan          
+      1300   4.2532521     -0.038437732   -nan            6.3757029     -nan          
+      1400   4.2715124      0.14492758    -nan            6.4030754     -nan          
+      1500   4.2508505      0.2363908     -nan            6.3721028     -nan          
+      1600   4.4095449      0.44519036    -nan            6.6099887     -nan          
+      1700   4.4337586     -0.2527509     -nan            6.6462854     -nan          
+      1800   4.5770844      0.17437157    -nan            6.8611335     -nan          
+      1900   4.7337236      0.13172859    -nan            7.0959384     -nan          
+      2000   4.7420609      0.12343737    -nan            7.1084362     -nan          
+      2100   4.8541535     -0.071140762   -nan            7.276465      -nan          
+      2200   5.0607907      0.27709566    -nan            7.5862181     -nan          
+      2300   5.0321697      0.068743286   -nan            7.5433145     -nan          
+      2400   5.2985174     -0.029866319   -nan            7.9425746     -nan          
+      2500   5.3041171      0.32100316    -nan            7.9509688     -nan          
+      2600   5.3540462     -0.084730258   -nan            8.0258133     -nan          
+      2700   5.5585177     -0.18049977    -nan            8.3323199     -nan          
+      2800   5.3865161      0.30434035    -nan            8.0744863     -nan          
+      2900   5.5216109      0.043966082   -nan            8.2769958     -nan          
+      3000   5.4682387      0.23103026    -nan            8.19699       -nan          
+      3100   5.410326       0.89277823    -nan            8.1101778     -nan          
+      3200   5.7210663     -0.079503534   -nan            8.5759833     -nan          
+      3300   5.7691408     -0.24943146    -nan            8.6480477     -nan          
+      3400   5.7296825     -0.044184034   -nan            8.588899      -nan          
+      3500   5.5237187     -0.0040244761  -nan            8.2801555     -nan          
+      3600   5.6364252     -0.00028570683 -nan            8.4491046     -nan          
+      3700   5.9727105     -0.21867205    -nan            8.9532025     -nan          
+      3800   5.8141361     -0.042211301   -nan            8.7154965     -nan          
+      3900   5.8545159     -0.089830681   -nan            8.7760266     -nan          
+      4000   5.871784       0.0039

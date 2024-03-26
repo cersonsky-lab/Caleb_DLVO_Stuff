@@ -1,0 +1,46 @@
+Initialized project.
+Using environment configuration: StandardEnvironment
+/var/lib/condor/execute/slot1/dir_2473807/analyze.py:15: RuntimeWarning: divide by zero encountered in divide
+  return -1*(job.sp.A/6)*((2*job.sp.r*job.sp.r)/(r**2-(job.sp.r+job.sp.r)**2)+(2*job.sp.r*job.sp.r)/(r**2-(job.sp.r-job.sp.r)**2)+np.log((r**2-(job.sp.r+job.sp.r)**2)/(r**2-(job.sp.r-job.sp.r)**2)))
+/var/lib/condor/execute/slot1/dir_2473807/analyze.py:15: RuntimeWarning: invalid value encountered in log
+  return -1*(job.sp.A/6)*((2*job.sp.r*job.sp.r)/(r**2-(job.sp.r+job.sp.r)**2)+(2*job.sp.r*job.sp.r)/(r**2-(job.sp.r-job.sp.r)**2)+np.log((r**2-(job.sp.r+job.sp.r)**2)/(r**2-(job.sp.r-job.sp.r)**2)))
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           e2566
+  Local device:         mlx5_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 3475, in _execute_operation
+    self._operations[operation.name](*operation._jobs)
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 625, in __call__
+    return self._op_func(*jobs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/var/lib/condor/execute/slot1/dir_2473807/project.py", line 64, in run_mc
+    lmp.file(job.fn("input.run.lammps"))
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/lammps/core.py", line 602, in file
+    with ExceptionCheck(self):
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/lammps/core.py", line 49, in __exit__
+    raise self.lmp._lammps_exception
+Exception: ERROR on proc 0: Neighbor list overflow, boost neigh_modify one (src/npair_half_bin_newtoff.cpp:129
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/var/lib/condor/execute/slot1/dir_2473807/project.py", line 76, in <module>
+    MyProject().main()
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 5132, in main
+    args.func(args)
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 4844, in _main_run
+    run()
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 3720, in run
+    self._run_operations(
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 3305, in _run_operations
+    self._execute_operation(operation, timeout, pretend)
+  File "/var/lib/condor/execute/slot1/dir_2473807/miniforge3/envs/lammps/lib/python3.11/site-packages/flow/project.py", line 3477, in _execute_operation
+    raise UserOperationError(execution_error_message) from error
+flow.errors.UserOperationError: An exception was raised during operation run_mc for job or aggregate with id da7e608b31ac431f5ded7e92c81e82a2.

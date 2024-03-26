@@ -14,3 +14,6 @@
 	Transfer input files failure at access point ap2001 while sending files to execution point interactive3_1@build4002.chtc.wisc.edu. Details: reading from file /home/youngwerth/folder/Caleb_DLVO_Stuff/LAMMPS/analyze.py: (errno 2) No such file or directory
 	Code 13 Subcode 2
 ...
+009 (130138.000.000) 2024-03-21 01:09:21 Job was aborted.
+	via condor_rm (by user youngwerth)
+...

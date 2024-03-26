@@ -14,8 +14,8 @@ transfer_input_files = Miniforge3-Linux-x86_64.sh, job_lammps.sh, analyze.py, pr
 transfer_output_files = workspace
 
 request_cpus = 1
-request_memory = 25GB
-request_disk = 25GB
+request_memory = 15GB
+request_disk = 15GB
 
 queue 1
 

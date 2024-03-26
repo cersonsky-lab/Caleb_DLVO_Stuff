@@ -1,0 +1,128 @@
+LAMMPS (21 Nov 2023)
+  using 1 OpenMP thread(s) per MPI task
+variable L equal 20
+variable N equal 3820
+variable radius equal 1.0
+variable M1 equal 1.0
+variable epsilon_vdw equal 1.0
+variable kappa equal 0.0
+variable Acc equal 39.478
+variable d1 equal 2.0
+variable T equal 1.0
+variable seed equal 2938190
+variable steps equal 10000
+# LAMMPS Run simulation Simple colloid with DLVO potential
+# Just Lennard-Jones potential for now
+# 500 particles, box length 40
+# T=1.0, damping constant = 10.0
+# In need of adjust parameters such as sigma_cc
+
+# Initialization
+units           lj
+dimension       3
+boundary        p p p
+atom_style      sphere
+newton          off
+
+# System parameters not changed by Signac
+variable        Ae equal 0.0            # Preexponent constant of yukawa potential
+variable        sigma_cc equal 0.1      # Size of the small particles integrated (Need to be adjusted)
+variable        cut_colloid equal 25.0  # cutoff radius of colloidal LJ-like interaction
+variable        cut_elec equal 2.50     # cutoff radius of yukawa potential
+
+
+# System definition
+region          simulation_box block -${L} ${L} -${L} ${L} -${L} ${L}
+region          simulation_box block -20 ${L} -${L} ${L} -${L} ${L}
+region          simulation_box block -20 20 -${L} ${L} -${L} ${L}
+region          simulation_box block -20 20 -20 ${L} -${L} ${L}
+region          simulation_box block -20 20 -20 20 -${L} ${L}
+region          simulation_box block -20 20 -20 20 -20 ${L}
+region          simulation_box block -20 20 -20 20 -20 20
+create_box      1 simulation_box
+Created orthogonal box = (-20 -20 -20) to (20 20 20)
+  1 by 1 by 1 MPI processor grid
+create_atoms    1 random ${N} 12345 simulation_box overlap 2.2
+create_atoms    1 random 3820 12345 simulation_box overlap 2.2
+WARNING: Only inserted 3688 particles out of 3820 (src/create_atoms.cpp:855)
+Created 3688 atoms
+  using lattice units in orthogonal box = (-20 -20 -20) to (20 20 20)
+  create_atoms CPU = 6.580 seconds
+
+# Particle properties
+set             group all diameter ${d1}
+set             group all diameter 2
+Setting atom values ...
+  3688 settings made for diameter
+set             group all density 10.0
+Setting atom values ...
+  3688 settings made for density
+
+# Pair potentials
+pair_style      hybrid/overlay colloid ${cut_colloid} yukawa/colloid ${kappa} ${cut_elec}
+pair_style      hybrid/overlay colloid 25 yukawa/colloid ${kappa} ${cut_elec}
+pair_style      hybrid/overlay colloid 25 yukawa/colloid 0 ${cut_elec}
+pair_style      hybrid/overlay colloid 25 yukawa/colloid 0 2.5
+pair_coeff      1 1 colloid ${Acc} ${sigma_cc} ${d1} ${d1}
+pair_coeff      1 1 colloid 39.478 ${sigma_cc} ${d1} ${d1}
+pair_coeff      1 1 colloid 39.478 0.1 ${d1} ${d1}
+pair_coeff      1 1 colloid 39.478 0.1 2 ${d1}
+pair_coeff      1 1 colloid 39.478 0.1 2 2
+pair_coeff      1 1 yukawa/colloid ${Ae}
+pair_coeff      1 1 yukawa/colloid 0
+# pair_style      colloid ${cut_colloid}
+# pair_coeff      1 1 ${Acc} ${sigma_cc} 1.0 1.0
+
+# Settings
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check no
+
+# Visualization
+thermo          100
+thermo_style    custom step temp press pe ke etotal
+dump            mydmp all atom 100 dump.min.lammpstrj
+
+# Radial distribution function
+# computed every 100 steps, evaluated every 100 steps,
+# averaged for once, avg calculated every 100 steps
+compute myrdf all rdf 100 * *
+fix myat all ave/time 100 1 100 c_myrdf[*] file tmp.rdf mode vector
+
+
+
+# Run
+velocity all create ${T} ${seed} mom yes rot yes dist gaussian
+velocity all create 1 ${seed} mom yes rot yes dist gaussian
+velocity all create 1 2938190 mom yes rot yes dist gaussian
+fix             mynvt all nvt temp ${T} ${T} 10.0
+fix             mynvt all nvt temp 1 ${T} 10.0
+fix             mynvt all nvt temp 1 1 10.0
+timestep        0.005
+run             ${steps}
+run             10000
+Generated 0 of 0 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = no
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 25.3
+  ghost atom cutoff = 25.3
+  binsize = 12.65, bins = 4 4 4
+  3 neighbor lists, perpetual/occasional/extra = 2 1 0
+  (1) pair colloid, perpetual
+      attributes: half, newton off
+      pair build: half/bin/newtoff
+      stencil: full/bin/3d
+      bin: standard
+  (2) pair yukawa/colloid, perpetual, trim from (1)
+      attributes: half, newton off, cut 2.8
+      pair build: trim
+      stencil: none
+      bin: none
+  (3) compute rdf, occasional, copy from (1)
+      attributes: half, newton off
+      pair build: copy
+      stencil: none
+      bin: none
+ERROR on proc 0: Neighbor list overflow, boost neigh_modify one (src/npair_half_bin_newtoff.cpp:129)
+Last command: run             ${steps}
+Total wall time: 0:00:06
